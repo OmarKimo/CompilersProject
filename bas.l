@@ -1,19 +1,17 @@
 %option yylineno
 
 %{
-#include<bits/stdc++.h>
-#include <stdlib.h>
+#include <bits/stdc++.h>
 #include "bas.tab.h"
 void yyerror(char *);
-
 %}
 
-printable [\x20-\x7E]   /**/
+printable [\x20-\x7E]  
 
 %%
 
 
-[ \n\t\r]+                      ;/* ignore whitespaces */                         ;
+[ \n\t\r]+                      ;/* ignore whitespaces */
 "/*"{printable}*"*/"            ;/* Ignore Comments */
 
 "const"							{return CONST;}
@@ -36,6 +34,7 @@ printable [\x20-\x7E]   /**/
 "-"								{return '-';}
 "*"								{return '*';}
 "/"								{return '/';}
+
 ">="							{return GE;}
 "<="							{return LE;}
 ">"								{return GT;}
@@ -53,12 +52,10 @@ printable [\x20-\x7E]   /**/
 
 <<EOF>>							{return ENDOFFILE;}
 
-.                               yyerror("Unknown character");
+.                               yyerror("Unknown Token");
 %%
 
-void yyerror (const char * err) {
-	printf("Syntax error. Line %d\n", yylineno);
-}
+
 int yywrap(void){
 	return 1;
 }
