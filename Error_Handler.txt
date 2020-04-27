@@ -1,0 +1,5 @@
+line 6 : ERROR: variable d is not defined.
+line 6 : WARNING: conflict data types.
+line 6 : ERROR: variable c is not defined.
+WARNING: Variable c is not used.
+Compilation Error.

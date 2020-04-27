@@ -1,0 +1,14 @@
+MOV 	6 	R0
+MOV 	3 	R1
+ADD 	R0 	R1 	R2
+MOV 	R2 	R3
+MOV 	5 	R4
+MUL 	R3 	R4 	R5
+MOV 	R5 	a
+MOV 	a 	R6
+MOV 	4 	R7
+ADD 	R6 	R7 	R8
+MOV 	R8 	R9
+MOV 	R9 	b
+MOV 	b 	R10
+MOV 	R10 	c

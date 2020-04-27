@@ -20,13 +20,13 @@ enum dataType {
 struct symNode{
 	bool isConst;
 	dataType type;
-	string strValue;
+	string Value;
 	bool isInit;
 	bool isUsed;
 	int line;
 
 	symNode(bool isConst = 0, dataType type = UNDEFINED, string val = "", bool isInit = 0, bool isUsed = 0, int line = 0) 
-		: isConst(isConst), type(type), strValue(val), isInit(isInit), isUsed(isUsed), line(line) {}
+		: isConst(isConst), type(type), Value(val), isInit(isInit), isUsed(isUsed), line(line) {}
 
 
   void printSym(char* varName){
@@ -47,7 +47,7 @@ struct symNode{
       default:
         break;
     }
-     symFile<<varName<<"\t\t\t"<<isConst<<"\t\t"<<t_str<<"\t\t\t"<<strValue<<"\t\t\t"<<isInit<<"\t\t\t"<<isUsed<<"\t\t"<<line<<"\n";
+     symFile<<varName<<setw(15)<<this->isConst<<setw(15)<<t_str<<setw(15)<<this->Value<<setw(15)<<this->isInit<<setw(15)<<this->isUsed<<setw(15)<<this->line<<"\n";
   }
 };
 
@@ -72,22 +72,19 @@ void uninitializedWarning(char*);
 void conflictWarning(void);
 void redefinitionError(char*);
 void symboTableFileInit(void);
-void printTripleOperandOperation(string, string, char*);
-void printQuadOperandOperation(string, string, string, char*);
+void tripleOperation(string, string, char*);
+void quadOperation(string, string, string, char*);
 
 %}
 
 %union {
-  char* val; 
-      		
+  char* val;    		
 	char* name;
-
-  struct info1{
+  
+  struct Type_Value{
     int type;
     char val[100];
-  }info;
-		
-
+  }Type_Value;
 };
 
 
@@ -109,7 +106,7 @@ void printQuadOperandOperation(string, string, string, char*);
 %nonassoc UMINUS
 
 %type <name> declaration
-%type <info> expr 
+%type <Type_Value> expr 
 
 
 %start program
@@ -188,7 +185,7 @@ declaration:
                                             }
   | CHAR VAR                                {
                                               varType[$2] = T_CHAR; 
-                                              declareVar($2, 0, T_CHAR, "", 0, 0, yylineno);
+                                              declareVar($2, 0, T_CHAR, "0", 0, 0, yylineno);
                                             }
   | BOOL VAR                                {
                                               varType[$2] = T_BOOL; 
@@ -208,130 +205,131 @@ expr:
                                               $$.type = T_INT;
                                               string ret = RegNoGen();
                                               strcpy($$.val, ret.c_str());  
-                                              printTripleOperandOperation("MOV", $1, $$.val);
+                                              tripleOperation("MOV", $1, $$.val);
                                             } 
   | DECIMAL                                 { 
                                               $$.type = T_FLOAT; 
                                               string ret = RegNoGen();
                                               strcpy($$.val, ret.c_str());
-                                              printTripleOperandOperation("MOV", $1, $$.val);
+                                              tripleOperation("MOV", $1, $$.val);
                                             }
   | CHARACTER                               { 
                                               $$.type = T_CHAR; 
                                               string ret = RegNoGen();
                                               strcpy($$.val, ret.c_str());
-                                              printTripleOperandOperation("MOV", $1, $$.val);
+                                              tripleOperation("MOV", $1, $$.val);
                                             }
   | VAR                                     {
                                               $$.type = varType[$1]; 
-                                              string ret = RegNoGen();
-                                              strcpy($$.val, ret.c_str()); 
-                                              /*check if defined before*/
                                               isDefined($1);
-                                              printTripleOperandOperation("MOV", $1, $$.val);
+                                              if(!c_failed){
+                                                string ret = RegNoGen();
+                                                strcpy($$.val, ret.c_str()); 
+                                                tripleOperation("MOV", $1, $$.val);
+                                              }
                                             } 
   | B_TRUE                               {
                                               $$.type = T_BOOL; 
                                               string ret = RegNoGen();
                                               strcpy($$.val, ret.c_str());
-                                              printTripleOperandOperation("MOV", "1", $$.val);
+                                              tripleOperation("MOV", "1", $$.val);
                                             }
   | B_FALSE                              {
                                               $$.type = T_BOOL; 
                                               string ret = RegNoGen();
                                               strcpy($$.val, ret.c_str());
-                                              printTripleOperandOperation("MOV", "0", $$.val);
+                                              tripleOperation("MOV", "0", $$.val);
                                             }
 
   | '-' expr %prec UMINUS                   {
                                               $$.type = $2.type;
                                               string ret = RegNoGen(); 
                                               strcpy($$.val, ret.c_str());
-                                              printTripleOperandOperation("NEG", $2.val, $$.val);
+                                              tripleOperation("NEG", $2.val, $$.val);
                                             }
   | expr '+' expr                           { 
                                               $$.type = checkType($1.type, $3.type); 
                                               string ret = RegNoGen(); 
                                               strcpy($$.val, ret.c_str());
-                                              printQuadOperandOperation("ADD",$1.val,$3.val,$$.val);
+                                              quadOperation("ADD",$1.val,$3.val,$$.val);
                                             }
   | expr '-' expr                           { 
                                               $$.type = checkType($1.type, $3.type); 
                                               string ret = RegNoGen();
                                               strcpy($$.val,ret.c_str());
-                                              printQuadOperandOperation("SUB", $1.val, $3.val, $$.val);
+                                              quadOperation("SUB", $1.val, $3.val, $$.val);
                                             }
   | expr '*' expr                           { 
                                               $$.type = checkType($1.type, $3.type); 
                                               string ret = RegNoGen();
                                               strcpy($$.val, ret.c_str());
-                                              printQuadOperandOperation("MUL", $1.val, $3.val, $$.val);
+                                              quadOperation("MUL", $1.val, $3.val, $$.val);
                                             }
   | expr '/' expr                           { 
                                               $$.type = checkType($1.type, $3.type); 
                                               string ret = RegNoGen();
                                               strcpy($$.val, ret.c_str());
-                                              printQuadOperandOperation("DIV", $1.val, $3.val, $$.val);
+                                              quadOperation("DIV", $1.val, $3.val, $$.val);
                                             }
   | expr LT expr                            { 
                                               $$.type = checkType($1.type, $3.type); 
                                               string ret = RegNoGen();
                                               strcpy($$.val, ret.c_str());
-                                              printQuadOperandOperation("LTN", $1.val, $3.val, $$.val);
+                                              quadOperation("LTN", $1.val, $3.val, $$.val);
                                             }
   | expr GT expr                            { 
                                               $$.type = checkType($1.type, $3.type); 
                                               string ret = RegNoGen();
                                               strcpy($$.val, ret.c_str());
-                                              printQuadOperandOperation("GTN", $1.val, $3.val, $$.val);
+                                              quadOperation("GTN", $1.val, $3.val, $$.val);
                                             }
   | expr GE expr                            { 
                                               $$.type = checkType($1.type, $3.type); 
                                               string ret = RegNoGen();
                                               strcpy($$.val, ret.c_str());
-                                              printQuadOperandOperation("GTE", $1.val, $3.val, $$.val);
+                                              quadOperation("GTE", $1.val, $3.val, $$.val);
                                             }
   | expr LE expr                            { 
                                               $$.type = checkType($1.type, $3.type);
                                               string ret = RegNoGen(); 
                                               strcpy($$.val, ret.c_str());
-                                              printQuadOperandOperation("LTE", $1.val, $3.val, $$.val);
+                                              quadOperation("LTE", $1.val, $3.val, $$.val);
                                             }
   | expr NE expr                            { 
                                               $$.type = checkType($1.type, $3.type);
                                               string ret = RegNoGen(); 
                                               strcpy($$.val, ret.c_str());
-                                              printQuadOperandOperation("NEQ", $1.val, $3.val, $$.val);
+                                              quadOperation("NEQ", $1.val, $3.val, $$.val);
                                             }
   | expr EQ expr                            { 
                                               $$.type = checkType($1.type, $3.type); 
                                               string ret = RegNoGen();
                                               strcpy($$.val, ret.c_str());
-                                              printQuadOperandOperation("EQU", $1.val, $3.val, $$.val);
+                                              quadOperation("EQU", $1.val, $3.val, $$.val);
                                             }
   | NOT expr                                { 
                                               $$.type = $2.type; 
                                               string ret = RegNoGen();
                                               strcpy($$.val, ret.c_str());
-                                              printTripleOperandOperation("NOT", $2.val, $$.val);
+                                              tripleOperation("NOT", $2.val, $$.val);
                                             }
   | expr AND expr                           { 
                                               $$.type = checkType($1.type, $3.type);
                                               string ret = RegNoGen(); 
                                               strcpy($$.val, ret.c_str());
-                                              printQuadOperandOperation("AND", $1.val, $3.val, $$.val);
+                                              quadOperation("AND", $1.val, $3.val, $$.val);
                                             }
   | expr OR expr                            { 
                                               $$.type = checkType($1.type, $3.type); 
                                               string ret = RegNoGen();
                                               strcpy($$.val, ret.c_str());
-                                              printQuadOperandOperation("OR", $1.val, $3.val, $$.val);
+                                              quadOperation("OR", $1.val, $3.val, $$.val);
                                             }
   | '(' expr ')'                            { 
                                               $$.type = $2.type; 
                                               string ret = RegNoGen();
                                               strcpy($$.val, ret.c_str());
-                                              printTripleOperandOperation("MOV", $2.val, $$.val);
+                                              tripleOperation("MOV", $2.val, $$.val);
                                             }
   ;
 
@@ -369,10 +367,10 @@ void declareVar(char* varName, bool isConst, dataType datatype, string value, bo
     if(findVar(varName) != -1) {
         redefinitionError(varName);
         c_failed = true;  
-        cout<<"scopeID: "<<scopeID<<endl;        
+        //cout<<"scopeID: "<<scopeID<<endl;        
     }
     else{
-      printTripleOperandOperation("MOV", value, varName);
+      tripleOperation("MOV", value, varName);
       symbolTable[scopeID][varName] = symNode(isConst, datatype, value, isInit, isUsed, line);
       unusedVar.insert(varName); 
       symNode& n = symbolTable[scopeID][varName];
@@ -393,11 +391,9 @@ void isDefined(char* varName){
           if(n.isInit == 0){
             uninitializedWarning(varName);
           }
-          if(n.isUsed != 1){
-            n.isUsed = 1;
-            n.line = yylineno;
-            n.printSym(varName);
-          }
+          n.isUsed = 1;
+          n.line = yylineno;
+          n.printSym(varName);
           unusedVar.erase(varName);
     }
 }
@@ -430,23 +426,22 @@ void assignVar(char* varName, char* value){
         c_failed = true;
      }
      else {
-       n.strValue = value;
-       if(n.isInit != 1) {
-          n.isInit = 1;
-          n.line = yylineno;
-          n.printSym(varName);
-       }
-       printTripleOperandOperation("MOV", value, varName);
+        n.Value = value;
+        n.isInit = 1;
+        n.line = yylineno;
+        n.printSym(varName);
+       tripleOperation("MOV", value, varName);
      }
    }
 }
 
-// quadrables handlers
-void printTripleOperandOperation(string opType, string src, char* dest){
+// Triples
+void tripleOperation(string opType, string src, char* dest){
   qudFile<<opType<<" \t"<<src<<" \t"<<dest<<"\n";
 }
 
-void printQuadOperandOperation(string opType, string src1, string src2, char* dest){
+// Quadruples
+void quadOperation(string opType, string src1, string src2, char* dest){
   qudFile<<opType<<" \t"<<src1<<" \t"<<src2<<" \t"<<dest<<"\n";
 }
 
@@ -466,45 +461,45 @@ void printErrors() {
 }
 
 void constError(char* varName){
-  string str = "ERROR: variable ";
+  string str = "line " + to_string(yylineno) + " : ERROR: variable ";
   str += varName;
-  str += " is a constant and can not be changed at line " + to_string(yylineno) + '\n';
+  str += " is a constant and can not be changed.\n";
   errFile << str;
 }
 
 void notDefinedError(char* varName){
-  string str = "ERROR: variable ";
+  string str = "line " + to_string(yylineno) + " : ERROR: variable ";
   str += varName;
-  str += " is not defined before line " + to_string(yylineno) + '\n';
+  str += " is not defined.\n";
   errFile << str;         
 }
 
 void uninitializedWarning(char* varName){
-  string str = "WARNING: variable ";
+  string str = "line " + to_string(yylineno) + " : WARNING: variable ";
   str += varName;
-  str += " is not initialized before line " + to_string(yylineno) + '\n';
+  str += " is not initialized.\n";
   errFile << str;
 }
 
 void conflictWarning() {
-  errFile<<"WARNING: conflict data types at line: " + to_string(yylineno) + '\n';
+  errFile<<"line " + to_string(yylineno) + " : WARNING: conflict data types.\n";
 }
 
 void redefinitionError(char* varName){
-  string str = "ERROR: variable: ";
+  string str = "line " + to_string(yylineno) + " : ERROR: variable: ";
   str += varName;
-  str += " is defined before line: " + to_string(yylineno) + '\n';
+  str += " is already defined.\n";
   errFile << str;
 }
 
 void initSymFile() {
-  symFile << "Variable Name\t\tConst\t\tDatatype\t\tValue\t\tInitialized\t\tUsed\t\tLine\n";
+  symFile << "Name"<<setw(15)<<"Const"<<setw(15)<<"Datatype"<<setw(15)<<"Value"<<setw(15)<<"Initialized"<<setw(15)<<"Used"<<setw(15)<<"Line\n";
 }
 
 int main(void) {
-  qudFile.open("quadrables.txt");
-  errFile.open("Error Handler.txt");
-  symFile.open("Symbol Table.txt");
+  qudFile.open("Quadrables.txt");
+  errFile.open("Error_Handler.txt");
+  symFile.open("Symbol_Table.txt");
   initSymFile();
   yyparse();
   return 0;
