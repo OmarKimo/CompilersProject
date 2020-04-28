@@ -66,8 +66,9 @@
 
 #include <bits/stdc++.h>
 using namespace std;
-ofstream qudFile, symFile, errFile;
 
+ofstream qudFile, symFile, errFile;
+map<string, string> varValue;
 set<string> unusedVar;
 extern int yylineno;
 int RegID = 0, scopeID = 0;
@@ -81,6 +82,11 @@ enum dataType {
   T_CHAR
 };
 
+string typeArr[] = {"UNDEFINED",
+  "BOOL",
+  "INT",
+  "FLOAT",
+  "CHAR"};
 // Symbol Table node
 struct symNode{
 	bool isConst;
@@ -112,7 +118,7 @@ struct symNode{
       default:
         break;
     }
-     symFile<<varName<<setw(15)<<this->isConst<<setw(15)<<t_str<<setw(15)<<this->Value<<setw(15)<<this->isInit<<setw(15)<<this->isUsed<<setw(15)<<this->line<<"\n";
+     symFile<<varName<<setw(15)<<this->isConst<<setw(15)<<t_str<<setw(15)<<varValue[this->Value]<<setw(15)<<this->isInit<<setw(15)<<this->isUsed<<setw(15)<<this->line<<"\n";
   }
 };
 
@@ -130,18 +136,19 @@ void isDefined(char*);
 int findVar(char*);
 int checkType(int, int);
 void assignVar(char*,char*);
-void printErrors(void);
+void exitCompilation(void);
 void constError(char*);
 void notDefinedError(char*);
-void uninitializedWarning(char*);
+void uninitializedError(char*);
 void conflictWarning(void);
 void redefinitionError(char*);
 void symboTableFileInit(void);
 void tripleOperation(string, string, char*);
 void quadOperation(string, string, string, char*);
+string castType(dataType, char*);
 
 
-#line 145 "bas.tab.c" /* yacc.c:339  */
+#line 152 "bas.tab.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -186,18 +193,9 @@ extern int yydebug;
     CHAR = 265,
     BOOL = 266,
     ENDOFFILE = 267,
-    GE = 268,
-    LE = 269,
-    GT = 270,
-    LT = 271,
-    EQ = 272,
-    NE = 273,
-    NOT = 274,
-    AND = 275,
-    OR = 276,
-    B_TRUE = 277,
-    B_FALSE = 278,
-    UMINUS = 279
+    B_TRUE = 268,
+    B_FALSE = 269,
+    UMINUS = 270
   };
 #endif
 
@@ -206,7 +204,7 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 80 "bas.y" /* yacc.c:355  */
+#line 87 "bas.y" /* yacc.c:355  */
 
   char* val;    		
 	char* name;
@@ -216,7 +214,7 @@ union YYSTYPE
     char val[100];
   }Type_Value;
 
-#line 220 "bas.tab.c" /* yacc.c:355  */
+#line 218 "bas.tab.c" /* yacc.c:355  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -233,7 +231,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 237 "bas.tab.c" /* yacc.c:358  */
+#line 235 "bas.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -473,23 +471,23 @@ union yyalloc
 #endif /* !YYCOPY_NEEDED */
 
 /* YYFINAL -- State number of the termination state.  */
-#define YYFINAL  38
+#define YYFINAL  36
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   234
+#define YYLAST   126
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  35
+#define YYNTOKENS  26
 /* YYNNTS -- Number of nonterminals.  */
 #define YYNNTS  10
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  49
+#define YYNRULES  40
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  95
+#define YYNSTATES  77
 
 /* YYTRANSLATE[YYX] -- Symbol number corresponding to YYX as returned
    by yylex, with out-of-bounds checking.  */
 #define YYUNDEFTOK  2
-#define YYMAXUTOK   279
+#define YYMAXUTOK   270
 
 #define YYTRANSLATE(YYX)                                                \
   ((unsigned int) (YYX) <= YYMAXUTOK ? yytranslate[YYX] : YYUNDEFTOK)
@@ -502,15 +500,15 @@ static const yytype_uint8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-      31,    32,    26,    24,     2,    25,     2,    27,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     2,    29,
-       2,    30,     2,     2,     2,     2,     2,     2,     2,     2,
+      22,    23,    17,    15,     2,    16,     2,    18,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,    20,
+       2,    21,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,    33,     2,    34,     2,     2,     2,     2,
+       2,     2,     2,    24,     2,    25,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -525,18 +523,18 @@ static const yytype_uint8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
        5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
-      15,    16,    17,    18,    19,    20,    21,    22,    23,    28
+      19
 };
 
 #if YYDEBUG
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   116,   116,   119,   120,   121,   125,   126,   127,   128,
-     129,   130,   134,   139,   144,   149,   156,   161,   166,   171,
-     178,   182,   186,   190,   197,   204,   210,   216,   222,   231,
-     237,   244,   250,   256,   262,   268,   274,   280,   286,   292,
-     298,   304,   310,   316,   322,   328,   337,   338,   342,   349
+       0,   117,   117,   120,   121,   122,   126,   127,   128,   129,
+     130,   131,   135,   141,   147,   153,   161,   167,   173,   179,
+     187,   191,   195,   199,   206,   214,   221,   228,   235,   251,
+     258,   266,   282,   299,   316,   333,   358,   368,   369,   373,
+     380
 };
 #endif
 
@@ -546,11 +544,10 @@ static const yytype_uint16 yyrline[] =
 static const char *const yytname[] =
 {
   "$end", "error", "$undefined", "INTEGER", "DECIMAL", "CHARACTER", "VAR",
-  "CONST", "INT", "FLOAT", "CHAR", "BOOL", "ENDOFFILE", "GE", "LE", "GT",
-  "LT", "EQ", "NE", "NOT", "AND", "OR", "B_TRUE", "B_FALSE", "'+'", "'-'",
-  "'*'", "'/'", "UMINUS", "';'", "'='", "'('", "')'", "'{'", "'}'",
-  "$accept", "program", "function", "stmt", "declaration", "assignment",
-  "expr", "nested_stmt", "Obrace", "Cbrace", YY_NULLPTR
+  "CONST", "INT", "FLOAT", "CHAR", "BOOL", "ENDOFFILE", "B_TRUE",
+  "B_FALSE", "'+'", "'-'", "'*'", "'/'", "UMINUS", "';'", "'='", "'('",
+  "')'", "'{'", "'}'", "$accept", "program", "function", "stmt",
+  "declaration", "assignment", "expr", "nested_stmt", "Obrace", "Cbrace", YY_NULLPTR
 };
 #endif
 
@@ -560,16 +557,15 @@ static const char *const yytname[] =
 static const yytype_uint16 yytoknum[] =
 {
        0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
-     265,   266,   267,   268,   269,   270,   271,   272,   273,   274,
-     275,   276,   277,   278,    43,    45,    42,    47,   279,    59,
-      61,    40,    41,   123,   125
+     265,   266,   267,   268,   269,    43,    45,    42,    47,   270,
+      59,    61,    40,    41,   123,   125
 };
 # endif
 
-#define YYPACT_NINF -27
+#define YYPACT_NINF -21
 
 #define yypact_value_is_default(Yystate) \
-  (!!((Yystate) == (-27)))
+  (!!((Yystate) == (-21)))
 
 #define YYTABLE_NINF -1
 
@@ -578,18 +574,16 @@ static const yytype_uint16 yytoknum[] =
 
   /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
      STATE-NUM.  */
-static const yytype_int16 yypact[] =
+static const yytype_int8 yypact[] =
 {
-      89,   -27,   -27,   -27,   -26,    -1,     6,     7,    15,    18,
-     -27,   151,   -27,   -27,   151,   -27,   151,   -27,    25,   120,
-     -27,     1,    14,   190,    57,   151,    43,    44,    45,    46,
-      27,    28,    29,    39,   -27,   -27,   -27,   170,   -27,   -27,
-     -27,   -27,   151,   151,   151,   151,   151,   151,   151,   151,
-     151,   151,   151,   151,   -27,   -27,   -27,    57,   -27,     2,
-      40,    41,    47,    48,   151,   151,   151,   151,   -27,    21,
-      21,    21,    21,    21,    21,   207,   207,   -25,   -25,   -27,
-     -27,   -27,   -27,   151,   151,   151,   151,     2,     2,     2,
-       2,     2,     2,     2,     2
+      76,   -21,   -21,   -21,   -20,    37,     6,     7,    10,    16,
+     -21,   -21,   -21,     1,   -21,     1,   -21,    24,    98,   -21,
+       5,    11,    18,    53,     1,    31,    33,    34,    43,    29,
+      30,    44,    47,   -21,   -21,     3,   -21,   -21,   -21,   -21,
+       1,     1,     1,     1,   -21,   -21,   -21,    53,   -21,   108,
+      49,    50,    51,    55,     1,     1,     1,     1,   -21,    -8,
+      -8,   -21,   -21,   -21,   -21,     1,     1,     1,     1,   108,
+     108,   108,   108,   108,   108,   108,   108
 };
 
   /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -598,27 +592,25 @@ static const yytype_int16 yypact[] =
 static const yytype_uint8 yydefact[] =
 {
        0,    25,    26,    27,    28,     0,     0,     0,     0,     0,
-       5,     0,    29,    30,     0,     6,     0,    48,     0,     2,
-       4,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-      20,    21,    22,    23,    28,    42,    31,     0,     1,     3,
-       7,     8,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,     9,    49,    47,     0,    11,    24,
-       0,     0,     0,     0,     0,     0,     0,     0,    45,    38,
-      39,    37,    36,    41,    40,    43,    44,    32,    33,    34,
-      35,    46,    10,     0,     0,     0,     0,    16,    17,    18,
-      19,    12,    13,    14,    15
+       5,    29,    30,     0,     6,     0,    39,     0,     2,     4,
+       0,     0,     0,     0,     0,     0,     0,     0,     0,    20,
+      21,    22,    23,    28,    31,     0,     1,     3,     7,     8,
+       0,     0,     0,     0,     9,    40,    38,     0,    11,    24,
+       0,     0,     0,     0,     0,     0,     0,     0,    36,    32,
+      33,    34,    35,    37,    10,     0,     0,     0,     0,    16,
+      17,    18,    19,    12,    13,    14,    15
 };
 
   /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -27,   -27,   -27,   -13,   -27,   -27,   -11,   -27,   -27,    24
+     -21,   -21,   -21,   -15,   -21,   -21,   -13,   -21,   -21,    27
 };
 
   /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-      -1,    18,    19,    20,    21,    22,    23,    57,    24,    58
+      -1,    17,    18,    19,    20,    21,    22,    47,    23,    48
 };
 
   /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -626,58 +618,36 @@ static const yytype_int8 yydefgoto[] =
      number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_uint8 yytable[] =
 {
-      35,    52,    53,    36,    25,    37,    39,    26,    27,    28,
-      29,    56,    30,    31,    59,    42,    43,    44,    45,    46,
-      47,    32,    48,    49,    33,    38,    50,    51,    52,    53,
-      40,    69,    70,    71,    72,    73,    74,    75,    76,    77,
-      78,    79,    80,    41,    81,    50,    51,    52,    53,    60,
-      61,    62,    63,    87,    88,    89,    90,    64,    65,    66,
-       1,     2,     3,     4,     5,     6,     7,     8,     9,    67,
-      83,    84,    91,    92,    93,    94,    11,    85,    86,    12,
-      13,    82,    14,     0,     0,     0,    15,     0,    16,     0,
-      17,    55,     1,     2,     3,     4,     5,     6,     7,     8,
-       9,    10,     0,     0,     0,     0,     0,     0,    11,     0,
-       0,    12,    13,     0,    14,     0,     0,     0,    15,     0,
-      16,     0,    17,     1,     2,     3,     4,     5,     6,     7,
-       8,     9,     0,     0,     0,     0,     0,     0,     0,    11,
-       0,     0,    12,    13,     0,    14,     0,     0,     0,    15,
-       0,    16,     0,    17,     1,     2,     3,    34,     0,     0,
-       0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-      11,     0,     0,    12,    13,     0,    14,     0,     0,     0,
-       0,     0,    16,    42,    43,    44,    45,    46,    47,     0,
-      48,    49,     0,     0,    50,    51,    52,    53,     0,     0,
-       0,     0,    68,    42,    43,    44,    45,    46,    47,     0,
-      48,    49,     0,     0,    50,    51,    52,    53,     0,    54,
-      42,    43,    44,    45,    46,    47,     0,     0,     0,     0,
-       0,    50,    51,    52,    53
+      34,    24,    35,    37,     1,     2,     3,    33,    46,    42,
+      43,    49,    29,    30,    11,    12,    31,    13,    40,    41,
+      42,    43,    32,    15,    36,    38,    58,    59,    60,    61,
+      62,    39,    63,    40,    41,    42,    43,    50,    44,    51,
+      52,    69,    70,    71,    72,    25,    26,    27,    28,    53,
+      54,    55,    73,    74,    75,    76,     1,     2,     3,     4,
+       5,     6,     7,     8,     9,    56,    11,    12,    57,    13,
+      65,    66,    67,    14,    64,    15,    68,    16,    45,     1,
+       2,     3,     4,     5,     6,     7,     8,     9,    10,    11,
+      12,     0,    13,     0,     0,     0,    14,     0,    15,     0,
+      16,     1,     2,     3,     4,     5,     6,     7,     8,     9,
+       0,    11,    12,     0,    13,     0,     0,     0,    14,     0,
+      15,     0,    16,    40,    41,    42,    43
 };
 
 static const yytype_int8 yycheck[] =
 {
-      11,    26,    27,    14,    30,    16,    19,     8,     9,    10,
-      11,    24,     6,     6,    25,    13,    14,    15,    16,    17,
-      18,     6,    20,    21,     6,     0,    24,    25,    26,    27,
-      29,    42,    43,    44,    45,    46,    47,    48,    49,    50,
-      51,    52,    53,    29,    57,    24,    25,    26,    27,     6,
-       6,     6,     6,    64,    65,    66,    67,    30,    30,    30,
-       3,     4,     5,     6,     7,     8,     9,    10,    11,    30,
-      30,    30,    83,    84,    85,    86,    19,    30,    30,    22,
-      23,    57,    25,    -1,    -1,    -1,    29,    -1,    31,    -1,
-      33,    34,     3,     4,     5,     6,     7,     8,     9,    10,
-      11,    12,    -1,    -1,    -1,    -1,    -1,    -1,    19,    -1,
-      -1,    22,    23,    -1,    25,    -1,    -1,    -1,    29,    -1,
-      31,    -1,    33,     3,     4,     5,     6,     7,     8,     9,
-      10,    11,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    19,
-      -1,    -1,    22,    23,    -1,    25,    -1,    -1,    -1,    29,
-      -1,    31,    -1,    33,     3,     4,     5,     6,    -1,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-      19,    -1,    -1,    22,    23,    -1,    25,    -1,    -1,    -1,
-      -1,    -1,    31,    13,    14,    15,    16,    17,    18,    -1,
-      20,    21,    -1,    -1,    24,    25,    26,    27,    -1,    -1,
-      -1,    -1,    32,    13,    14,    15,    16,    17,    18,    -1,
-      20,    21,    -1,    -1,    24,    25,    26,    27,    -1,    29,
-      13,    14,    15,    16,    17,    18,    -1,    -1,    -1,    -1,
-      -1,    24,    25,    26,    27
+      13,    21,    15,    18,     3,     4,     5,     6,    23,    17,
+      18,    24,     6,     6,    13,    14,     6,    16,    15,    16,
+      17,    18,     6,    22,     0,    20,    23,    40,    41,    42,
+      43,    20,    47,    15,    16,    17,    18,     6,    20,     6,
+       6,    54,    55,    56,    57,     8,     9,    10,    11,     6,
+      21,    21,    65,    66,    67,    68,     3,     4,     5,     6,
+       7,     8,     9,    10,    11,    21,    13,    14,    21,    16,
+      21,    21,    21,    20,    47,    22,    21,    24,    25,     3,
+       4,     5,     6,     7,     8,     9,    10,    11,    12,    13,
+      14,    -1,    16,    -1,    -1,    -1,    20,    -1,    22,    -1,
+      24,     3,     4,     5,     6,     7,     8,     9,    10,    11,
+      -1,    13,    14,    -1,    16,    -1,    -1,    -1,    20,    -1,
+      22,    -1,    24,    15,    16,    17,    18
 };
 
   /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
@@ -685,25 +655,23 @@ static const yytype_int8 yycheck[] =
 static const yytype_uint8 yystos[] =
 {
        0,     3,     4,     5,     6,     7,     8,     9,    10,    11,
-      12,    19,    22,    23,    25,    29,    31,    33,    36,    37,
-      38,    39,    40,    41,    43,    30,     8,     9,    10,    11,
-       6,     6,     6,     6,     6,    41,    41,    41,     0,    38,
-      29,    29,    13,    14,    15,    16,    17,    18,    20,    21,
-      24,    25,    26,    27,    29,    34,    38,    42,    44,    41,
-       6,     6,     6,     6,    30,    30,    30,    30,    32,    41,
-      41,    41,    41,    41,    41,    41,    41,    41,    41,    41,
-      41,    38,    44,    30,    30,    30,    30,    41,    41,    41,
-      41,    41,    41,    41,    41
+      12,    13,    14,    16,    20,    22,    24,    27,    28,    29,
+      30,    31,    32,    34,    21,     8,     9,    10,    11,     6,
+       6,     6,     6,     6,    32,    32,     0,    29,    20,    20,
+      15,    16,    17,    18,    20,    25,    29,    33,    35,    32,
+       6,     6,     6,     6,    21,    21,    21,    21,    23,    32,
+      32,    32,    32,    29,    35,    21,    21,    21,    21,    32,
+      32,    32,    32,    32,    32,    32,    32
 };
 
   /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_uint8 yyr1[] =
 {
-       0,    35,    36,    37,    37,    37,    38,    38,    38,    38,
-      38,    38,    39,    39,    39,    39,    39,    39,    39,    39,
-      39,    39,    39,    39,    40,    41,    41,    41,    41,    41,
-      41,    41,    41,    41,    41,    41,    41,    41,    41,    41,
-      41,    41,    41,    41,    41,    41,    42,    42,    43,    44
+       0,    26,    27,    28,    28,    28,    29,    29,    29,    29,
+      29,    29,    30,    30,    30,    30,    30,    30,    30,    30,
+      30,    30,    30,    30,    31,    32,    32,    32,    32,    32,
+      32,    32,    32,    32,    32,    32,    32,    33,    33,    34,
+      35
 };
 
   /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
@@ -712,8 +680,8 @@ static const yytype_uint8 yyr2[] =
        0,     2,     1,     2,     1,     1,     1,     2,     2,     2,
        3,     2,     5,     5,     5,     5,     4,     4,     4,     4,
        2,     2,     2,     2,     3,     1,     1,     1,     1,     1,
-       1,     2,     3,     3,     3,     3,     3,     3,     3,     3,
-       3,     3,     2,     3,     3,     3,     2,     1,     1,     1
+       1,     2,     3,     3,     3,     3,     3,     2,     1,     1,
+       1
 };
 
 
@@ -1390,441 +1358,426 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 116 "bas.y" /* yacc.c:1646  */
-    {printErrors(); exit(0);}
-#line 1396 "bas.tab.c" /* yacc.c:1646  */
+#line 117 "bas.y" /* yacc.c:1646  */
+    {exitCompilation();}
+#line 1364 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 119 "bas.y" /* yacc.c:1646  */
+#line 120 "bas.y" /* yacc.c:1646  */
     {}
-#line 1402 "bas.tab.c" /* yacc.c:1646  */
+#line 1370 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 5:
-#line 121 "bas.y" /* yacc.c:1646  */
+#line 122 "bas.y" /* yacc.c:1646  */
     {}
-#line 1408 "bas.tab.c" /* yacc.c:1646  */
+#line 1376 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 6:
-#line 125 "bas.y" /* yacc.c:1646  */
+#line 126 "bas.y" /* yacc.c:1646  */
     {}
-#line 1414 "bas.tab.c" /* yacc.c:1646  */
+#line 1382 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 7:
-#line 126 "bas.y" /* yacc.c:1646  */
+#line 127 "bas.y" /* yacc.c:1646  */
     {}
-#line 1420 "bas.tab.c" /* yacc.c:1646  */
+#line 1388 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 8:
-#line 127 "bas.y" /* yacc.c:1646  */
+#line 128 "bas.y" /* yacc.c:1646  */
     {}
-#line 1426 "bas.tab.c" /* yacc.c:1646  */
+#line 1394 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 9:
-#line 128 "bas.y" /* yacc.c:1646  */
+#line 129 "bas.y" /* yacc.c:1646  */
     {}
-#line 1432 "bas.tab.c" /* yacc.c:1646  */
+#line 1400 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 10:
-#line 129 "bas.y" /* yacc.c:1646  */
+#line 130 "bas.y" /* yacc.c:1646  */
     {}
-#line 1438 "bas.tab.c" /* yacc.c:1646  */
+#line 1406 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 12:
-#line 134 "bas.y" /* yacc.c:1646  */
+#line 135 "bas.y" /* yacc.c:1646  */
     {
                                               checkType(T_INT, (yyvsp[0].Type_Value).type); 
                                               varType[(yyvsp[-2].name)] = T_INT; 
+                                              varValue[(yyvsp[0].Type_Value).val] = castType(T_INT, (char*)varValue[(yyvsp[0].Type_Value).val].c_str());
                                               declareVar((yyvsp[-2].name), 1, T_INT, (yyvsp[0].Type_Value).val, 1, 0, yylineno);
                                             }
-#line 1448 "bas.tab.c" /* yacc.c:1646  */
+#line 1417 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 13:
-#line 139 "bas.y" /* yacc.c:1646  */
+#line 141 "bas.y" /* yacc.c:1646  */
     {
                                               checkType(T_FLOAT, (yyvsp[0].Type_Value).type); 
                                               varType[(yyvsp[-2].name)] = T_FLOAT; 
+                                              varValue[(yyvsp[0].Type_Value).val] = castType(T_FLOAT, (char*)varValue[(yyvsp[0].Type_Value).val].c_str());
                                               declareVar((yyvsp[-2].name), 1, T_FLOAT, (yyvsp[0].Type_Value).val, 1, 0, yylineno);
                                             }
-#line 1458 "bas.tab.c" /* yacc.c:1646  */
+#line 1428 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 14:
-#line 144 "bas.y" /* yacc.c:1646  */
+#line 147 "bas.y" /* yacc.c:1646  */
     {
                                               checkType(T_CHAR, (yyvsp[0].Type_Value).type); 
                                               varType[(yyvsp[-2].name)] = T_CHAR; 
+                                              varValue[(yyvsp[0].Type_Value).val] = castType(T_CHAR, (char*)varValue[(yyvsp[0].Type_Value).val].c_str());
                                               declareVar((yyvsp[-2].name), 1, T_CHAR, (yyvsp[0].Type_Value).val, 1, 0, yylineno);
                                             }
-#line 1468 "bas.tab.c" /* yacc.c:1646  */
+#line 1439 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 15:
-#line 149 "bas.y" /* yacc.c:1646  */
+#line 153 "bas.y" /* yacc.c:1646  */
     {
                                               checkType(T_BOOL, (yyvsp[0].Type_Value).type); 
                                               varType[(yyvsp[-2].name)] = T_BOOL; 
+                                              varValue[(yyvsp[0].Type_Value).val] = castType(T_BOOL, (char*)varValue[(yyvsp[0].Type_Value).val].c_str());
                                               declareVar((yyvsp[-2].name), 1, T_BOOL, (yyvsp[0].Type_Value).val, 1, 0, yylineno);
                                             }
-#line 1478 "bas.tab.c" /* yacc.c:1646  */
+#line 1450 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 16:
-#line 156 "bas.y" /* yacc.c:1646  */
+#line 161 "bas.y" /* yacc.c:1646  */
     {
                                               checkType(T_INT, (yyvsp[0].Type_Value).type); 
-                                              varType[(yyvsp[-2].name)] = T_INT; 
-                                              declareVar((yyvsp[-2].name), 0, T_INT, (yyvsp[0].Type_Value).val, 1, 0, yylineno);
+                                              varType[(yyvsp[-2].name)] = T_INT;
+                                              varValue[(yyvsp[0].Type_Value).val] = castType(T_INT, (char*)varValue[(yyvsp[0].Type_Value).val].c_str());
+                                              declareVar((yyvsp[-2].name), 0, T_INT , (yyvsp[0].Type_Value).val, 1, 0, yylineno);
                                             }
-#line 1488 "bas.tab.c" /* yacc.c:1646  */
+#line 1461 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 17:
-#line 161 "bas.y" /* yacc.c:1646  */
+#line 167 "bas.y" /* yacc.c:1646  */
     {
                                               checkType(T_FLOAT, (yyvsp[0].Type_Value).type); 
                                               varType[(yyvsp[-2].name)] = T_FLOAT; 
+                                              varValue[(yyvsp[0].Type_Value).val] = castType(T_FLOAT, (char*)varValue[(yyvsp[0].Type_Value).val].c_str());
                                               declareVar((yyvsp[-2].name), 0, T_FLOAT, (yyvsp[0].Type_Value).val, 1, 0, yylineno);
                                             }
-#line 1498 "bas.tab.c" /* yacc.c:1646  */
+#line 1472 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 18:
-#line 166 "bas.y" /* yacc.c:1646  */
+#line 173 "bas.y" /* yacc.c:1646  */
     {
                                               checkType(T_CHAR, (yyvsp[0].Type_Value).type); 
-                                              varType[(yyvsp[-2].name)] = T_CHAR; 
+                                              varType[(yyvsp[-2].name)] = T_CHAR;
+                                              varValue[(yyvsp[0].Type_Value).val] = castType(T_CHAR, (char*)varValue[(yyvsp[0].Type_Value).val].c_str());
                                               declareVar((yyvsp[-2].name), 0, T_CHAR, (yyvsp[0].Type_Value).val, 1, 0, yylineno);
                                             }
-#line 1508 "bas.tab.c" /* yacc.c:1646  */
+#line 1483 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 19:
-#line 171 "bas.y" /* yacc.c:1646  */
+#line 179 "bas.y" /* yacc.c:1646  */
     {
                                               checkType(T_BOOL, (yyvsp[0].Type_Value).type); 
                                               varType[(yyvsp[-2].name)] = T_BOOL; 
+                                              varValue[(yyvsp[0].Type_Value).val] = castType(T_BOOL, (char*)varValue[(yyvsp[0].Type_Value).val].c_str());
                                               declareVar((yyvsp[-2].name), 0, T_BOOL, (yyvsp[0].Type_Value).val, 1, 0, yylineno);
                                             }
-#line 1518 "bas.tab.c" /* yacc.c:1646  */
+#line 1494 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 20:
-#line 178 "bas.y" /* yacc.c:1646  */
+#line 187 "bas.y" /* yacc.c:1646  */
     {
                                               varType[(yyvsp[0].name)] = T_INT; 
                                               declareVar((yyvsp[0].name), 0, T_INT, "0", 0, 0, yylineno);
                                             }
-#line 1527 "bas.tab.c" /* yacc.c:1646  */
+#line 1503 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 21:
-#line 182 "bas.y" /* yacc.c:1646  */
+#line 191 "bas.y" /* yacc.c:1646  */
     {
                                               varType[(yyvsp[0].name)] = T_FLOAT; 
                                               declareVar((yyvsp[0].name), 0, T_FLOAT, "0", 0, 0, yylineno);
                                             }
-#line 1536 "bas.tab.c" /* yacc.c:1646  */
+#line 1512 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 22:
-#line 186 "bas.y" /* yacc.c:1646  */
+#line 195 "bas.y" /* yacc.c:1646  */
     {
                                               varType[(yyvsp[0].name)] = T_CHAR; 
                                               declareVar((yyvsp[0].name), 0, T_CHAR, "0", 0, 0, yylineno);
                                             }
-#line 1545 "bas.tab.c" /* yacc.c:1646  */
+#line 1521 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 23:
-#line 190 "bas.y" /* yacc.c:1646  */
+#line 199 "bas.y" /* yacc.c:1646  */
     {
                                               varType[(yyvsp[0].name)] = T_BOOL; 
                                               declareVar((yyvsp[0].name), 0, T_BOOL, "0", 0, 0, yylineno);
                                             }
-#line 1554 "bas.tab.c" /* yacc.c:1646  */
+#line 1530 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 24:
-#line 197 "bas.y" /* yacc.c:1646  */
+#line 206 "bas.y" /* yacc.c:1646  */
     {
-                                              checkType(varType[(yyvsp[-2].name)], (yyvsp[0].Type_Value).type); 
+                                              checkType(varType[(yyvsp[-2].name)], (yyvsp[0].Type_Value).type);
+                                              varValue[(yyvsp[0].Type_Value).val] = castType(varType[(yyvsp[-2].name)], (char*)varValue[(yyvsp[0].Type_Value).val].c_str());
                                               assignVar((yyvsp[-2].name), (yyvsp[0].Type_Value).val);
                                             }
-#line 1563 "bas.tab.c" /* yacc.c:1646  */
+#line 1540 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 25:
-#line 204 "bas.y" /* yacc.c:1646  */
+#line 214 "bas.y" /* yacc.c:1646  */
     { 
                                               (yyval.Type_Value).type = T_INT;
                                               string ret = RegNoGen();
+                                              varValue[ret] = to_string(atoi((yyvsp[0].val)));
                                               strcpy((yyval.Type_Value).val, ret.c_str());  
                                               tripleOperation("MOV", (yyvsp[0].val), (yyval.Type_Value).val);
                                             }
-#line 1574 "bas.tab.c" /* yacc.c:1646  */
+#line 1552 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 26:
-#line 210 "bas.y" /* yacc.c:1646  */
+#line 221 "bas.y" /* yacc.c:1646  */
     { 
                                               (yyval.Type_Value).type = T_FLOAT; 
                                               string ret = RegNoGen();
+                                              varValue[ret] = to_string(atof((yyvsp[0].val)));
                                               strcpy((yyval.Type_Value).val, ret.c_str());
                                               tripleOperation("MOV", (yyvsp[0].val), (yyval.Type_Value).val);
                                             }
-#line 1585 "bas.tab.c" /* yacc.c:1646  */
+#line 1564 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 27:
-#line 216 "bas.y" /* yacc.c:1646  */
+#line 228 "bas.y" /* yacc.c:1646  */
     { 
                                               (yyval.Type_Value).type = T_CHAR; 
                                               string ret = RegNoGen();
+                                              varValue[ret] = (yyvsp[0].val);
                                               strcpy((yyval.Type_Value).val, ret.c_str());
                                               tripleOperation("MOV", (yyvsp[0].val), (yyval.Type_Value).val);
                                             }
-#line 1596 "bas.tab.c" /* yacc.c:1646  */
+#line 1576 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 28:
-#line 222 "bas.y" /* yacc.c:1646  */
+#line 235 "bas.y" /* yacc.c:1646  */
     {
                                               (yyval.Type_Value).type = varType[(yyvsp[0].name)]; 
                                               isDefined((yyvsp[0].name));
                                               if(!c_failed){
                                                 string ret = RegNoGen();
+                                                int scID = findVar((yyvsp[0].name));
+                                                symNode& n = symbolTable[scID][(yyvsp[0].name)];
+                                                varValue[ret] = varValue[n.Value];
                                                 strcpy((yyval.Type_Value).val, ret.c_str()); 
                                                 tripleOperation("MOV", (yyvsp[0].name), (yyval.Type_Value).val);
                                               }
+                                              else{
+                                                yyerror("terminating due to an undefined variable error");
+                                                exitCompilation();
+                                              }
                                             }
-#line 1610 "bas.tab.c" /* yacc.c:1646  */
+#line 1597 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 29:
-#line 231 "bas.y" /* yacc.c:1646  */
+#line 251 "bas.y" /* yacc.c:1646  */
     {
                                               (yyval.Type_Value).type = T_BOOL; 
                                               string ret = RegNoGen();
+                                              varValue[ret] = "1";
                                               strcpy((yyval.Type_Value).val, ret.c_str());
                                               tripleOperation("MOV", "1", (yyval.Type_Value).val);
+                                            }
+#line 1609 "bas.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 30:
+#line 258 "bas.y" /* yacc.c:1646  */
+    {
+                                              (yyval.Type_Value).type = T_BOOL; 
+                                              string ret = RegNoGen();
+                                              varValue[ret] = "0";
+                                              strcpy((yyval.Type_Value).val, ret.c_str());
+                                              tripleOperation("MOV", "0", (yyval.Type_Value).val);
                                             }
 #line 1621 "bas.tab.c" /* yacc.c:1646  */
     break;
 
-  case 30:
-#line 237 "bas.y" /* yacc.c:1646  */
-    {
-                                              (yyval.Type_Value).type = T_BOOL; 
-                                              string ret = RegNoGen();
-                                              strcpy((yyval.Type_Value).val, ret.c_str());
-                                              tripleOperation("MOV", "0", (yyval.Type_Value).val);
-                                            }
-#line 1632 "bas.tab.c" /* yacc.c:1646  */
-    break;
-
   case 31:
-#line 244 "bas.y" /* yacc.c:1646  */
+#line 266 "bas.y" /* yacc.c:1646  */
     {
                                               (yyval.Type_Value).type = (yyvsp[0].Type_Value).type;
-                                              string ret = RegNoGen(); 
+                                              string ret = RegNoGen();
+                                              string s = (yyvsp[0].Type_Value).val;
+                                              if((yyval.Type_Value).type == T_INT) varValue[ret] = to_string(-stoi(varValue[s]));
+                                              else if((yyval.Type_Value).type == T_FLOAT) varValue[ret] = to_string(-stof(varValue[s]));
+                                              else{
+                                                string str = "Incompatible operation with the type ";
+                                                str += typeArr[(yyval.Type_Value).type];
+                                                yyerror((char*)str.c_str());
+                                                c_failed = true;
+                                                exitCompilation();
+                                              }
                                               strcpy((yyval.Type_Value).val, ret.c_str());
                                               tripleOperation("NEG", (yyvsp[0].Type_Value).val, (yyval.Type_Value).val);
                                             }
-#line 1643 "bas.tab.c" /* yacc.c:1646  */
+#line 1642 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 32:
-#line 250 "bas.y" /* yacc.c:1646  */
+#line 282 "bas.y" /* yacc.c:1646  */
     { 
                                               (yyval.Type_Value).type = checkType((yyvsp[-2].Type_Value).type, (yyvsp[0].Type_Value).type); 
                                               string ret = RegNoGen(); 
+                                              string s1 = (yyvsp[-2].Type_Value).val;
+                                              string s2 = (yyvsp[0].Type_Value).val;
+                                              if((yyval.Type_Value).type == T_INT) varValue[ret] = to_string(stoi(varValue[s1]) + stoi(varValue[s2]));
+                                              else if((yyval.Type_Value).type == T_FLOAT) varValue[ret] = to_string(stof(varValue[s1]) + stof(varValue[s2]));
+                                              else{
+                                                string str = "Incompatible operation with the type ";
+                                                str += typeArr[(yyval.Type_Value).type];
+                                                yyerror((char*)str.c_str());
+                                                c_failed = true;
+                                                exitCompilation();
+                                              }
                                               strcpy((yyval.Type_Value).val, ret.c_str());
                                               quadOperation("ADD",(yyvsp[-2].Type_Value).val,(yyvsp[0].Type_Value).val,(yyval.Type_Value).val);
                                             }
-#line 1654 "bas.tab.c" /* yacc.c:1646  */
+#line 1664 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 33:
-#line 256 "bas.y" /* yacc.c:1646  */
+#line 299 "bas.y" /* yacc.c:1646  */
     { 
                                               (yyval.Type_Value).type = checkType((yyvsp[-2].Type_Value).type, (yyvsp[0].Type_Value).type); 
                                               string ret = RegNoGen();
+                                              string s1 = (yyvsp[-2].Type_Value).val;
+                                              string s2 = (yyvsp[0].Type_Value).val;
+                                              if((yyval.Type_Value).type == T_INT) varValue[ret] = to_string(stoi(varValue[s1]) - stoi(varValue[s2]));
+                                              else if((yyval.Type_Value).type == T_FLOAT) varValue[ret] = to_string(stof(varValue[s1]) - stof(varValue[s2]));
+                                              else{
+                                                string str = "Incompatible operation with the type ";
+                                                str += typeArr[(yyval.Type_Value).type];
+                                                yyerror((char*)str.c_str());
+                                                c_failed = true;
+                                                exitCompilation();
+                                              }
                                               strcpy((yyval.Type_Value).val,ret.c_str());
                                               quadOperation("SUB", (yyvsp[-2].Type_Value).val, (yyvsp[0].Type_Value).val, (yyval.Type_Value).val);
                                             }
-#line 1665 "bas.tab.c" /* yacc.c:1646  */
+#line 1686 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 34:
-#line 262 "bas.y" /* yacc.c:1646  */
+#line 316 "bas.y" /* yacc.c:1646  */
     { 
                                               (yyval.Type_Value).type = checkType((yyvsp[-2].Type_Value).type, (yyvsp[0].Type_Value).type); 
                                               string ret = RegNoGen();
+                                              string s1 = (yyvsp[-2].Type_Value).val;
+                                              string s2 = (yyvsp[0].Type_Value).val;
+                                              if((yyval.Type_Value).type == T_INT) varValue[ret] = to_string(stoi(varValue[s1]) * stoi(varValue[s2]));
+                                              else if((yyval.Type_Value).type == T_FLOAT) varValue[ret] = to_string(stof(varValue[s1]) * stof(varValue[s2]));
+                                              else{
+                                                string str = "Incompatible operation with the type ";
+                                                str += typeArr[(yyval.Type_Value).type];
+                                                yyerror((char*)str.c_str());
+                                                c_failed = true;
+                                                exitCompilation();
+                                              }
                                               strcpy((yyval.Type_Value).val, ret.c_str());
                                               quadOperation("MUL", (yyvsp[-2].Type_Value).val, (yyvsp[0].Type_Value).val, (yyval.Type_Value).val);
                                             }
-#line 1676 "bas.tab.c" /* yacc.c:1646  */
+#line 1708 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 35:
-#line 268 "bas.y" /* yacc.c:1646  */
+#line 333 "bas.y" /* yacc.c:1646  */
     { 
                                               (yyval.Type_Value).type = checkType((yyvsp[-2].Type_Value).type, (yyvsp[0].Type_Value).type); 
                                               string ret = RegNoGen();
-                                              strcpy((yyval.Type_Value).val, ret.c_str());
-                                              quadOperation("DIV", (yyvsp[-2].Type_Value).val, (yyvsp[0].Type_Value).val, (yyval.Type_Value).val);
+                                              string s1 = (yyvsp[-2].Type_Value).val;
+                                              string s2 = (yyvsp[0].Type_Value).val;
+                                              if(!stoi(varValue[s2])){
+                                                c_failed = true;
+                                                yyerror("terminating due to divide by zero error...");
+                                                exitCompilation();
+                                              }
+                                              else{
+                                                if((yyval.Type_Value).type == T_INT) varValue[ret] = to_string(stoi(varValue[s1]) / stoi(varValue[s2]));
+                                                else if((yyval.Type_Value).type == T_FLOAT) varValue[ret] = to_string(stof(varValue[s1]) / stof(varValue[s2]));
+                                                else{
+                                                  string str = "Incompatible operation with the type ";
+                                                  str += typeArr[(yyval.Type_Value).type];
+                                                  yyerror((char*)str.c_str());
+                                                  c_failed = true;
+                                                  exitCompilation();
+                                                }
+                                                strcpy((yyval.Type_Value).val, ret.c_str());
+                                                quadOperation("DIV", (yyvsp[-2].Type_Value).val, (yyvsp[0].Type_Value).val, (yyval.Type_Value).val);
+                                              }
+                                              
                                             }
-#line 1687 "bas.tab.c" /* yacc.c:1646  */
+#line 1738 "bas.tab.c" /* yacc.c:1646  */
     break;
 
   case 36:
-#line 274 "bas.y" /* yacc.c:1646  */
-    { 
-                                              (yyval.Type_Value).type = checkType((yyvsp[-2].Type_Value).type, (yyvsp[0].Type_Value).type); 
-                                              string ret = RegNoGen();
-                                              strcpy((yyval.Type_Value).val, ret.c_str());
-                                              quadOperation("LTN", (yyvsp[-2].Type_Value).val, (yyvsp[0].Type_Value).val, (yyval.Type_Value).val);
-                                            }
-#line 1698 "bas.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 37:
-#line 280 "bas.y" /* yacc.c:1646  */
-    { 
-                                              (yyval.Type_Value).type = checkType((yyvsp[-2].Type_Value).type, (yyvsp[0].Type_Value).type); 
-                                              string ret = RegNoGen();
-                                              strcpy((yyval.Type_Value).val, ret.c_str());
-                                              quadOperation("GTN", (yyvsp[-2].Type_Value).val, (yyvsp[0].Type_Value).val, (yyval.Type_Value).val);
-                                            }
-#line 1709 "bas.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 38:
-#line 286 "bas.y" /* yacc.c:1646  */
-    { 
-                                              (yyval.Type_Value).type = checkType((yyvsp[-2].Type_Value).type, (yyvsp[0].Type_Value).type); 
-                                              string ret = RegNoGen();
-                                              strcpy((yyval.Type_Value).val, ret.c_str());
-                                              quadOperation("GTE", (yyvsp[-2].Type_Value).val, (yyvsp[0].Type_Value).val, (yyval.Type_Value).val);
-                                            }
-#line 1720 "bas.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 39:
-#line 292 "bas.y" /* yacc.c:1646  */
-    { 
-                                              (yyval.Type_Value).type = checkType((yyvsp[-2].Type_Value).type, (yyvsp[0].Type_Value).type);
-                                              string ret = RegNoGen(); 
-                                              strcpy((yyval.Type_Value).val, ret.c_str());
-                                              quadOperation("LTE", (yyvsp[-2].Type_Value).val, (yyvsp[0].Type_Value).val, (yyval.Type_Value).val);
-                                            }
-#line 1731 "bas.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 40:
-#line 298 "bas.y" /* yacc.c:1646  */
-    { 
-                                              (yyval.Type_Value).type = checkType((yyvsp[-2].Type_Value).type, (yyvsp[0].Type_Value).type);
-                                              string ret = RegNoGen(); 
-                                              strcpy((yyval.Type_Value).val, ret.c_str());
-                                              quadOperation("NEQ", (yyvsp[-2].Type_Value).val, (yyvsp[0].Type_Value).val, (yyval.Type_Value).val);
-                                            }
-#line 1742 "bas.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 41:
-#line 304 "bas.y" /* yacc.c:1646  */
-    { 
-                                              (yyval.Type_Value).type = checkType((yyvsp[-2].Type_Value).type, (yyvsp[0].Type_Value).type); 
-                                              string ret = RegNoGen();
-                                              strcpy((yyval.Type_Value).val, ret.c_str());
-                                              quadOperation("EQU", (yyvsp[-2].Type_Value).val, (yyvsp[0].Type_Value).val, (yyval.Type_Value).val);
-                                            }
-#line 1753 "bas.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 42:
-#line 310 "bas.y" /* yacc.c:1646  */
-    { 
-                                              (yyval.Type_Value).type = (yyvsp[0].Type_Value).type; 
-                                              string ret = RegNoGen();
-                                              strcpy((yyval.Type_Value).val, ret.c_str());
-                                              tripleOperation("NOT", (yyvsp[0].Type_Value).val, (yyval.Type_Value).val);
-                                            }
-#line 1764 "bas.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 43:
-#line 316 "bas.y" /* yacc.c:1646  */
-    { 
-                                              (yyval.Type_Value).type = checkType((yyvsp[-2].Type_Value).type, (yyvsp[0].Type_Value).type);
-                                              string ret = RegNoGen(); 
-                                              strcpy((yyval.Type_Value).val, ret.c_str());
-                                              quadOperation("AND", (yyvsp[-2].Type_Value).val, (yyvsp[0].Type_Value).val, (yyval.Type_Value).val);
-                                            }
-#line 1775 "bas.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 44:
-#line 322 "bas.y" /* yacc.c:1646  */
-    { 
-                                              (yyval.Type_Value).type = checkType((yyvsp[-2].Type_Value).type, (yyvsp[0].Type_Value).type); 
-                                              string ret = RegNoGen();
-                                              strcpy((yyval.Type_Value).val, ret.c_str());
-                                              quadOperation("OR", (yyvsp[-2].Type_Value).val, (yyvsp[0].Type_Value).val, (yyval.Type_Value).val);
-                                            }
-#line 1786 "bas.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 45:
-#line 328 "bas.y" /* yacc.c:1646  */
+#line 358 "bas.y" /* yacc.c:1646  */
     { 
                                               (yyval.Type_Value).type = (yyvsp[-1].Type_Value).type; 
                                               string ret = RegNoGen();
+                                              varValue[ret] = varValue[(yyvsp[-1].Type_Value).val];
                                               strcpy((yyval.Type_Value).val, ret.c_str());
                                               tripleOperation("MOV", (yyvsp[-1].Type_Value).val, (yyval.Type_Value).val);
                                             }
-#line 1797 "bas.tab.c" /* yacc.c:1646  */
+#line 1750 "bas.tab.c" /* yacc.c:1646  */
     break;
 
-  case 46:
-#line 337 "bas.y" /* yacc.c:1646  */
+  case 37:
+#line 368 "bas.y" /* yacc.c:1646  */
     {}
-#line 1803 "bas.tab.c" /* yacc.c:1646  */
+#line 1756 "bas.tab.c" /* yacc.c:1646  */
     break;
 
-  case 47:
-#line 338 "bas.y" /* yacc.c:1646  */
+  case 38:
+#line 369 "bas.y" /* yacc.c:1646  */
     {}
-#line 1809 "bas.tab.c" /* yacc.c:1646  */
+#line 1762 "bas.tab.c" /* yacc.c:1646  */
     break;
 
-  case 48:
-#line 342 "bas.y" /* yacc.c:1646  */
+  case 39:
+#line 373 "bas.y" /* yacc.c:1646  */
     {
-                                    ++scopeID; 
+                                    scopeID++; 
                                     symbolTable.push_back(map<string, symNode> ());
                                   }
-#line 1818 "bas.tab.c" /* yacc.c:1646  */
+#line 1771 "bas.tab.c" /* yacc.c:1646  */
     break;
 
-  case 49:
-#line 349 "bas.y" /* yacc.c:1646  */
-    {symbolTable.pop_back(); --scopeID;}
-#line 1824 "bas.tab.c" /* yacc.c:1646  */
+  case 40:
+#line 380 "bas.y" /* yacc.c:1646  */
+    {symbolTable.pop_back(); scopeID--;}
+#line 1777 "bas.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 1828 "bas.tab.c" /* yacc.c:1646  */
+#line 1781 "bas.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2052,14 +2005,49 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 353 "bas.y" /* yacc.c:1906  */
+#line 384 "bas.y" /* yacc.c:1906  */
 
 
 void yyerror(char *s) {
-  printf("%s at line: %d\n", s, yylineno);
-  errFile << s << " at line " << yylineno << endl;
+  printf("line %d : %s \n", yylineno, s);
+  errFile << "line " << yylineno << " : " << s << endl;
 }
 
+string castType(dataType typ, char* obj){
+    string ret = "";
+    stringstream ss;
+    switch(typ){
+      case T_BOOL:
+        {
+          bool x = obj;
+          ss << x;
+          ss >> ret;
+          break;
+        }
+      case T_INT:
+        {
+          int x = atoi(obj);
+          ss << x;
+          ss >> ret;
+          break;
+        }
+      case T_FLOAT:
+        {
+          float x = atof(obj);
+          ss << x;
+          ss >> ret;
+          break;
+        }
+      case T_CHAR:
+        {
+          ret = obj;
+          break;
+        }
+      default:
+        break;
+    }
+    return ret;
+}
 // generate register number string
 string RegNoGen(){
   return "R" + to_string(RegID++);
@@ -2092,7 +2080,10 @@ void isDefined(char* varName){
     else {
           symNode& n = symbolTable[idx][varName];
           if(n.isInit == 0){
-            uninitializedWarning(varName);
+            uninitializedError(varName);
+            c_failed = true;
+            yyerror("terminating due to using uninitialized variable error..");
+            exitCompilation();
           }
           n.isUsed = 1;
           n.line = yylineno;
@@ -2151,7 +2142,7 @@ void quadOperation(string opType, string src1, string src2, char* dest){
 
 // Error handlers
 
-void printErrors() {
+void exitCompilation() {
     for (auto i : unusedVar) {
         errFile << "WARNING: Variable " << i << " is not used.\n";
     }
@@ -2161,6 +2152,7 @@ void printErrors() {
     else {
       errFile << "Compiled Successfully.\n";
     }
+    exit(0);
 }
 
 void constError(char* varName){
@@ -2177,8 +2169,8 @@ void notDefinedError(char* varName){
   errFile << str;         
 }
 
-void uninitializedWarning(char* varName){
-  string str = "line " + to_string(yylineno) + " : WARNING: variable ";
+void uninitializedError(char* varName){
+  string str = "line " + to_string(yylineno) + " : ERROR: variable ";
   str += varName;
   str += " is not initialized.\n";
   errFile << str;

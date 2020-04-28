@@ -55,18 +55,9 @@ extern int yydebug;
     CHAR = 265,
     BOOL = 266,
     ENDOFFILE = 267,
-    GE = 268,
-    LE = 269,
-    GT = 270,
-    LT = 271,
-    EQ = 272,
-    NE = 273,
-    NOT = 274,
-    AND = 275,
-    OR = 276,
-    B_TRUE = 277,
-    B_FALSE = 278,
-    UMINUS = 279
+    B_TRUE = 268,
+    B_FALSE = 269,
+    UMINUS = 270
   };
 #endif
 
@@ -75,7 +66,7 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 80 "bas.y" /* yacc.c:1909  */
+#line 87 "bas.y" /* yacc.c:1909  */
 
   char* val;    		
 	char* name;
@@ -85,7 +76,7 @@ union YYSTYPE
     char val[100];
   }Type_Value;
 
-#line 89 "bas.tab.h" /* yacc.c:1909  */
+#line 80 "bas.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

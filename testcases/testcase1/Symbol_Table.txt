@@ -1,0 +1,7 @@
+Name          Const       Datatype          Value    Initialized           Used          Line
+a              0        Integer             -2              1              0              1
+b              0          Float            0.8              1              0              2
+c              0      Character            '%'              1              0              3
+d              0        Boolean              1              1              0              4
+e              0        Integer                             0              0              5
+a              0        Integer             -2              1              1              6

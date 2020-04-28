@@ -1,0 +1,13 @@
+Name          Const       Datatype          Value    Initialized           Used          Line
+a              0        Integer             -2              1              0              1
+e              0        Integer                             0              0              2
+e              0        Integer              3              1              0              4
+d              0        Integer              5              1              0              5
+e              0        Integer              3              1              1              6
+d              0        Integer              5              1              1              6
+e              0        Integer              8              1              1              6
+e              0        Integer              8              1              1              8
+d              0        Integer              3              1              0              9
+d              0        Integer              3              1              1             10
+a              0        Integer             -2              1              1             10
+a              0        Integer              1              1              1             10

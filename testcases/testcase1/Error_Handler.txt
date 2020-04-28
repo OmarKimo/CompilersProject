@@ -1,0 +1,7 @@
+line 6 : ERROR: variable e is not initialized.
+line 6 : terminating due to using uninitialized variable error..
+WARNING: Variable b is not used.
+WARNING: Variable c is not used.
+WARNING: Variable d is not used.
+WARNING: Variable e is not used.
+Compilation Error.

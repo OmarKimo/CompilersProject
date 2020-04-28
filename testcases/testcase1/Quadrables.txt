@@ -1,0 +1,10 @@
+MOV 	-2 	R0
+MOV 	R0 	a
+MOV 	0.8 	R1
+MOV 	R1 	b
+MOV 	'%' 	R2
+MOV 	R2 	c
+MOV 	0 	R3
+MOV 	R3 	d
+MOV 	0 	e
+MOV 	a 	R4
